@@ -292,29 +292,25 @@ true visiblep is set to nil."))
         finally (setf (checkboxes div) (reverse checkboxes))
                 (return div)))
 
-;;;; (remove-method #'(setf byte-value) (find-method #'(setf byte-value) '(:after) '(t byte-switches)))
-
 (defgeneric update (cl-obj))
 
 (defmethod update ((obj byte-switches))
   (with-slots (checkboxes byte-value) obj
     (loop for i from 2 downto 0
           for ch in checkboxes
-          do (setf (checkedp ch) (if (= 1 (ldb (byte 1 i) byte-value)) t nil)))))
+          ;; do (setf (checkedp ch) (if (= 1 (ldb (byte 1 i) byte-value)) t nil))
+          do (jquery-execute ch (format nil "prop('checked', ~A)"
+                                        (if (= 1 (ldb (byte 1 i) byte-value)) "true" "false"))))))
 
 (defun create-on-change (minskytron)
   (lambda (obj checkbox byte-pos)
     (setf (ldb (byte 1 byte-pos) (byte-value obj)) (if (checkedp checkbox) 1 0)
           (elt (minskytron-data minskytron) (num-switch obj)) (1+ (byte-value obj)))))
 
-(defun create-on-restart (minskytron switches)
+(defun create-on-restart (minskytron)
   (lambda (obj)
     (declare (ignore obj))
-    (minskytron-restart minskytron)
-    (loop for value across (subseq (minskytron-data minskytron) 0 6)
-          for sh in switches
-          do (setf (byte-value sh) (1- value))
-             (update sh))))
+    (minskytron-restart minskytron)))
 
 (defun create-on-reset (minskytron switches)
   (lambda (obj)
@@ -349,7 +345,7 @@ true visiblep is set to nil."))
                                                        :value value
                                                        :on-change (create-on-change minskytron)))))
     (create-gui-menu-item actions :content "Restart"
-                                  :on-click (create-on-restart minskytron switches))
+                                  :on-click (create-on-restart minskytron))
     (create-gui-menu-item actions :content "Reset"
                                   :on-click (create-on-reset minskytron switches))
     (setf (display form) :flex
