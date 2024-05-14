@@ -266,8 +266,7 @@ true visiblep is set to nil."))
 
 (defmethod create-byte-switches ((obj clog-obj) &key (num-switch 0) (value 0) hidden class html-id
                                                   (auto-place t) on-change)
-  (loop with value = (1- value)
-        with div = (change-class (create-div obj :class "border"
+  (loop with div = (change-class (create-div obj :class "border rounded"
                                                  :hidden hidden :class class
                                                  :html-id html-id
                                                  :auto-place auto-place)
@@ -330,27 +329,25 @@ true visiblep is set to nil."))
   (clog-gui-initialize body)
   (add-class body "w3-blue")
   (let* ((actions (create-gui-menu-drop-down (create-gui-menu-bar body) :content "Minskytron"))
-         (div-canvas (create-div body))
-         (canvas (create-canvas div-canvas :width *width* :height *height*))
+         (container (create-div body :class "container-fluid"))
+         (div-canvas (create-div (create-div container :class "row") :class "col"))
+         (canvas (create-canvas div-canvas :class "img-fluid" :width *width* :height *height*))
          (gl (create-webgl canvas :attributes '("preserveDrawingBuffer" "true")))
          (quad (make-quad gl))
          (minskytron (make-minskytron gl 64 *width* *height*))
          (sb (create-style-block body))
-         (div-form (create-div body))
-         (form (create-form div-form))
+         (form (create-form body))
+         (div-form (create-div form :class "row g-0 my-2 mx-4"))
          (switches (loop for i from 0
                          for value across (subseq (minskytron-data minskytron) 0 6)
-                         collect (create-byte-switches form
+                         collect (create-byte-switches (create-div div-form :class "col col-md-2")
                                                        :num-switch i
-                                                       :value value
+                                                       :value (1- value)
                                                        :on-change (create-on-change minskytron)))))
     (create-gui-menu-item actions :content "Restart"
                                   :on-click (create-on-restart minskytron))
     (create-gui-menu-item actions :content "Reset"
                                   :on-click (create-on-reset minskytron switches))
-    (setf (display form) :flex
-          (align-items form) :center
-          (justify-content form) :center)
     (format *debug-io* "~D x ~D~%" (drawing-buffer-width gl) (drawing-buffer-height gl))
     (add-style sb :element "canvas" '(("width" "512px") ("height" "512px")))
     (add-class canvas "w3-black")
